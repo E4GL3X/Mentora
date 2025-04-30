@@ -1,27 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'home_screen.dart';
-import 'signup_screen.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+import 'home_screen.dart';
+
+class SignupScreen extends StatefulWidget {
+  const SignupScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<SignupScreen> createState() => _SignupScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final TextEditingController confirmPasswordController =
+      TextEditingController();
+
   bool isLoading = false;
 
-  void loginUser() async {
-    setState(() {
-      isLoading = true;
-    });
+  void signupUser() async {
+    if (passwordController.text != confirmPasswordController.text) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Passwords don't match")));
+      return;
+    }
+
+    setState(() => isLoading = true);
 
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
@@ -32,18 +40,16 @@ class _LoginScreenState extends State<LoginScreen> {
     } on FirebaseAuthException catch (e) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(e.message ?? 'Login failed')));
+      ).showSnackBar(SnackBar(content: Text(e.message ?? 'Signup failed')));
     }
 
-    setState(() {
-      isLoading = false;
-    });
+    setState(() => isLoading = false);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Mentora Login')),
+      appBar: AppBar(title: const Text("Mentora Signup")),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -51,32 +57,27 @@ class _LoginScreenState extends State<LoginScreen> {
           children: [
             TextField(
               controller: emailController,
-              decoration: const InputDecoration(labelText: 'Email'),
+              decoration: const InputDecoration(labelText: "Email"),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: passwordController,
               obscureText: true,
-              decoration: const InputDecoration(labelText: 'Password'),
+              decoration: const InputDecoration(labelText: "Password"),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: confirmPasswordController,
+              obscureText: true,
+              decoration: const InputDecoration(labelText: "Confirm Password"),
             ),
             const SizedBox(height: 24),
             isLoading
                 ? const CircularProgressIndicator()
                 : ElevatedButton(
-                  onPressed: loginUser,
-                  child: const Text('Login'),
+                  onPressed: signupUser,
+                  child: const Text("Sign Up"),
                 ),
-            const SizedBox(height: 16),
-            TextButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const SignupScreen()),
-                );
-              },
-
-              child: const Text('Don\'t have an account? Sign Up'),
-            ),
           ],
         ),
       ),
