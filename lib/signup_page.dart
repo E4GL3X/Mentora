@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -17,6 +18,28 @@ class _SignUpPageState extends State<SignUpPage> {
   String selectedRole = 'Student';
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  Future<String> _generateStudentNumber() async {
+    const prefix = 'STU-';
+    const numberLength = 6;
+    String studentNumber = ''; // Initialize with default value
+    bool isUnique = false;
+
+    while (!isUnique) {
+      final random = Random();
+      final digits = List.generate(numberLength, (_) => random.nextInt(10)).join();
+      studentNumber = '$prefix$digits';
+
+      // Check if the student number already exists in Firestore
+      final query = await _firestore
+          .collection('users')
+          .where('studentNumber', isEqualTo: studentNumber)
+          .get();
+      isUnique = query.docs.isEmpty;
+    }
+
+    return studentNumber;
+  }
 
   Future<void> signUpUser() async {
     try {
@@ -40,9 +63,15 @@ class _SignUpPageState extends State<SignUpPage> {
 
       if (user != null) {
         print('Storing user data in Firestore...');
+        String? studentNumber;
+        if (selectedRole == 'Student') {
+          studentNumber = await _generateStudentNumber();
+        }
+
         await _firestore.collection('users').doc(user.uid).set({
           'email': user.email,
           'role': selectedRole,
+          if (studentNumber != null) 'studentNumber': studentNumber,
         });
 
         print('Sending verification email...');
@@ -147,8 +176,6 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                 ),
                 const SizedBox(height: 60),
-
-                // Email
                 TextField(
                   controller: emailController,
                   decoration: InputDecoration(
@@ -164,8 +191,6 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                 ),
                 const SizedBox(height: 20),
-
-                // Password
                 TextField(
                   controller: passwordController,
                   obscureText: true,
@@ -182,8 +207,6 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                 ),
                 const SizedBox(height: 20),
-
-                // Role buttons
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -223,8 +246,6 @@ class _SignUpPageState extends State<SignUpPage> {
                   ],
                 ),
                 const SizedBox(height: 50),
-
-                // Sign Up Button
                 Center(
                   child: SizedBox(
                     width: 200,
@@ -245,8 +266,6 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                 ),
                 const SizedBox(height: 20),
-
-                // Login Link
                 Center(
                   child: TextButton(
                     onPressed: () {

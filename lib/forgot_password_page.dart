@@ -1,7 +1,7 @@
-// forgot_password_page.dart
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:mentora/login_page.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -15,37 +15,191 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
   Future<void> resetPassword() async {
     try {
-      await FirebaseAuth.instance
-          .sendPasswordResetEmail(email: emailController.text.trim());
+      final email = emailController.text.trim();
+      if (email.isEmpty) {
+        showErrorDialog('Please enter your email.');
+        return;
+      }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password reset email sent!')),
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+
+      // Show success dialog
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Password Reset Email Sent'),
+          content: const Text(
+            'A password reset link has been sent to your email. Please check your inbox (and spam folder).',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Close dialog
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginPage()),
+                );
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        ),
       );
-
-      Navigator.pop(context); // Go back to login
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error sending reset email')),
-      );
+      String errorMessage;
+      if (e is FirebaseAuthException) {
+        switch (e.code) {
+          case 'invalid-email':
+            errorMessage = 'The email address is invalid.';
+            break;
+          case 'user-not-found':
+            errorMessage = 'No user found with this email.';
+            break;
+          case 'network-request-failed':
+            errorMessage = 'Network error. Please check your connection.';
+            break;
+          default:
+            errorMessage = 'An error occurred: ${e.message}';
+        }
+      } else {
+        errorMessage = 'An unexpected error occurred: $e';
+      }
+      showErrorDialog(errorMessage);
     }
+  }
+
+  void showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Error'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Forgot Password")),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: emailController,
-              decoration:
-                  const InputDecoration(labelText: 'Enter your email'),
+      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 45),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Title
+                const Row(
+                  children: [
+                    Text(
+                      'Reset Password',
+                      style: TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                        color: Color.fromARGB(255, 0, 0, 0),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 50),
+
+                // SVG Image
+                Center(
+                  child: SvgPicture.asset(
+                    'assets/images/reset.svg',
+                    width: 150,
+                    height: 150,
+                    placeholderBuilder: (context) => const Placeholder(
+                      fallbackWidth: 150,
+                      fallbackHeight: 150,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 100),
+
+                // Email TextField
+                TextField(
+                  controller: emailController,
+                  decoration: InputDecoration(
+                    hintText: 'Enter your email',
+                    filled: true,
+                    fillColor: const Color.fromARGB(255, 246, 252, 223),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 16,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 50),
+
+                // Reset Password Button
+                Center(
+                  child: SizedBox(
+                    width: 200,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: resetPassword,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color.fromARGB(255, 49, 81, 30),
+                        minimumSize: Size.zero,
+                        padding: EdgeInsets.zero,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                      child: const Text(
+                        'Reset Password',
+                        style: TextStyle(fontSize: 18, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Back to Log In Button
+                Center(
+                  child: SizedBox(
+                    width: 200,
+                    height: 50,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        minimumSize: Size.zero,
+                        padding: EdgeInsets.zero,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (_) => const LoginPage()),
+                        );
+                      },
+                      child: const Text(
+                        'Back to Log In',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Color.fromARGB(255, 49, 81, 30),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            ElevatedButton(
-                onPressed: resetPassword, child: const Text("Reset Password")),
-          ],
+          ),
         ),
       ),
     );
