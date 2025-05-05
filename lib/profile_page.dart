@@ -262,7 +262,7 @@ class _ProfilePageState extends State<ProfilePage> with AutomaticKeepAliveClient
       backgroundColor: const Color(0xFFF6F4F0),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:mentora/profile_page.dart';
 
 class StudentsPage extends StatefulWidget {
-  const StudentsPage({super.key});
+  final Function(String)? onUnfriend; // Callback for unfriending a student
+  const StudentsPage({super.key, this.onUnfriend});
 
   @override
   State<StudentsPage> createState() => _StudentsPageState();
@@ -93,7 +94,6 @@ class _StudentsPageState extends State<StudentsPage> {
     if (user == null) return;
 
     try {
-      // Check if a request already exists
       final existingRequest = await FirebaseFirestore.instance
           .collection('requests')
           .where('from', isEqualTo: user.uid)
@@ -108,7 +108,6 @@ class _StudentsPageState extends State<StudentsPage> {
         return;
       }
 
-      // Check if already in a relationship
       final existingRelationship = await FirebaseFirestore.instance
           .collection('relationships')
           .where('instructorId', isEqualTo: user.uid)
@@ -122,7 +121,6 @@ class _StudentsPageState extends State<StudentsPage> {
         return;
       }
 
-      // Send request
       await FirebaseFirestore.instance.collection('requests').add({
         'from': user.uid,
         'to': studentId,
@@ -142,13 +140,37 @@ class _StudentsPageState extends State<StudentsPage> {
     }
   }
 
+  Future<void> _unfriendStudent(String studentId) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    await FirebaseFirestore.instance
+        .collection('relationships')
+        .where('instructorId', isEqualTo: user.uid)
+        .where('studentId', isEqualTo: studentId)
+        .get()
+        .then((snapshot) {
+      for (var doc in snapshot.docs) {
+        doc.reference.delete();
+      }
+    });
+
+    setState(() {
+      _myStudents.removeWhere((student) => student['studentId'] == studentId);
+    });
+
+    if (widget.onUnfriend != null) {
+      widget.onUnfriend!(studentId);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4EEFF),
+      backgroundColor: const Color(0xFFF6F4F0),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 30.0),
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -156,12 +178,12 @@ class _StudentsPageState extends State<StudentsPage> {
                 const Text(
                   'Manage Students',
                   style: TextStyle(
-                    fontSize: 24,
+                    fontSize: 30,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF424874),
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 40),
                 const Text(
                   'Add New Student',
                   style: TextStyle(
@@ -231,6 +253,10 @@ class _StudentsPageState extends State<StudentsPage> {
                   return ListTile(
                     title: Text(student['name']),
                     subtitle: Text('Student Number: ${student['studentNumber']}'),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.person_remove, color: Color(0xFF424874)),
+                      onPressed: () => _unfriendStudent(student['studentId']),
+                    ),
                     onTap: () {
                       Navigator.push(
                         context,

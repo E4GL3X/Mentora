@@ -130,7 +130,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   decoration: InputDecoration(
                     hintText: 'Enter your email',
                     filled: true,
-                    fillColor: const Color.fromARGB(255, 246, 252, 223),
+                    fillColor: Color(0xFFDCD6F7),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(30),
                       borderSide: BorderSide.none,
@@ -151,7 +151,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     child: ElevatedButton(
                       onPressed: resetPassword,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color.fromARGB(255, 49, 81, 30),
+                        backgroundColor: const Color(0xFF424874),
                         minimumSize: Size.zero,
                         padding: EdgeInsets.zero,
                         shape: RoundedRectangleBorder(
@@ -191,7 +191,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                         'Back to Log In',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: Color.fromARGB(255, 49, 81, 30),
+                          color: Color(0xFF424874),
                         ),
                       ),
                     ),
