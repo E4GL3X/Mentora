@@ -75,7 +75,7 @@ class _ProfilePageState extends State<ProfilePage> with AutomaticKeepAliveClient
       addressController.text = address ?? '';
       phoneController.text = phone ?? '';
       bloodGroupController.text = bloodGroup ?? '';
-      avatarUrl = 'https://ui-avatars.com/api/?name=${Uri.encodeComponent(name ?? 'No name')}&size=200&background=A6B1E1&color=fff';
+      avatarUrl = 'https://robohash.org/${Uri.encodeComponent(name ?? user.uid)}?size=200x200&set=set1';
     });
   }
 
@@ -105,7 +105,7 @@ class _ProfilePageState extends State<ProfilePage> with AutomaticKeepAliveClient
           addressController.text = address ?? '';
           phoneController.text = phone ?? '';
           bloodGroupController.text = bloodGroup ?? '';
-          avatarUrl = 'https://ui-avatars.com/api/?name=${Uri.encodeComponent(name ?? 'No name')}&size=200&background=A6B1E1&color=fff';
+          avatarUrl = 'https://robohash.org/${Uri.encodeComponent(name ?? user.uid)}?size=200x200&set=set1';
         });
 
         await prefs.setString('name_${user.uid}', name ?? '');
@@ -139,7 +139,7 @@ class _ProfilePageState extends State<ProfilePage> with AutomaticKeepAliveClient
           phone = doc.data()?['phone'] ?? '';
           bloodGroup = doc.data()?['bloodGroup'] ?? '';
           studentNumber = doc.data()?['studentNumber'];
-          avatarUrl = 'https://ui-avatars.com/api/?name=${Uri.encodeComponent(name ?? 'No name')}&size=200&background=A6B1E1&color=fff';
+          avatarUrl = 'https://robohash.org/${Uri.encodeComponent(name ?? studentId)}?size=200x200&set=set1';
         });
       }
     } catch (e) {
@@ -251,7 +251,7 @@ class _ProfilePageState extends State<ProfilePage> with AutomaticKeepAliveClient
       phone = phoneController.text;
       bloodGroup = bloodGroupController.text;
       isEditing = false;
-      avatarUrl = 'https://ui-avatars.com/api/?name=${Uri.encodeComponent(name ?? 'No name')}&size=200&background=A6B1E1&color=fff';
+      avatarUrl = 'https://robohash.org/${Uri.encodeComponent(name ?? user.uid)}?size=200x200&set=set1';
     });
   }
 
@@ -259,7 +259,7 @@ class _ProfilePageState extends State<ProfilePage> with AutomaticKeepAliveClient
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F4F0),
+      backgroundColor: const Color(0xFFF6F0F0),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
@@ -288,17 +288,33 @@ class _ProfilePageState extends State<ProfilePage> with AutomaticKeepAliveClient
                 const SizedBox(height: 20),
                 if (avatarUrl != null)
                   Container(
-                    width: 100,
-                    height: 100,
+                    width: 150,
+                    height: 150,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      image: DecorationImage(
-                        image: NetworkImage(avatarUrl!),
+                    ),
+                    child: ClipOval(
+                      child: Image.network(
+                        avatarUrl!,
                         fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.grey,
+                            child: const Icon(
+                              Icons.person,
+                              size: 50,
+                              color: Colors.white,
+                            ),
+                          );
+                        },
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return const Center(child: CircularProgressIndicator());
+                        },
                       ),
                     ),
                   ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 60),
                 Text(
                   widget.studentId != null ? 'Student Details' : '${widget.role} Details',
                   style: const TextStyle(
@@ -307,7 +323,7 @@ class _ProfilePageState extends State<ProfilePage> with AutomaticKeepAliveClient
                     color: Color(0xFF424874),
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 20),
                 if (!isEditing || widget.studentId != null)
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -364,9 +380,9 @@ class _ProfilePageState extends State<ProfilePage> with AutomaticKeepAliveClient
                         }),
                       ],
                       if (widget.studentId == null) ...[
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 100),
                         Align(
-                          alignment: Alignment.bottomLeft,
+                          alignment: Alignment.bottomRight,
                           child: GestureDetector(
                             onTap: () {
                               setState(() {
@@ -374,7 +390,7 @@ class _ProfilePageState extends State<ProfilePage> with AutomaticKeepAliveClient
                               });
                             },
                             child: CircleAvatar(
-                              radius: 20,
+                              radius: 30,
                               backgroundColor: const Color(0xFFA6B1E1),
                               child: const Icon(Icons.edit, color: Colors.white),
                             ),
