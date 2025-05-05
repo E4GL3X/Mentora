@@ -426,7 +426,7 @@ class _StudentHomePageState extends State<StudentHomePage> {
             const Text(
               'Attendance History',
               style: TextStyle(
-                fontSize: 24,
+                fontSize: 30,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF2E5077), // Dark Blue
               ),

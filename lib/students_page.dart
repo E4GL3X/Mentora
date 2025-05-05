@@ -12,7 +12,8 @@ class StudentsPage extends StatefulWidget {
 }
 
 class _StudentsPageState extends State<StudentsPage> {
-  final TextEditingController _studentNumberController = TextEditingController();
+  final TextEditingController _studentNumberController =
+      TextEditingController();
   Map<String, dynamic>? _foundStudent;
   String? _errorMessage;
   List<Map<String, dynamic>> _myStudents = [];
@@ -27,20 +28,27 @@ class _StudentsPageState extends State<StudentsPage> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    final query = await FirebaseFirestore.instance
-        .collection('relationships')
-        .where('instructorId', isEqualTo: user.uid)
-        .get();
+    final query =
+        await FirebaseFirestore.instance
+            .collection('relationships')
+            .where('instructorId', isEqualTo: user.uid)
+            .get();
 
-    final students = await Future.wait(query.docs.map((doc) async {
-      final studentId = doc.data()['studentId'];
-      final studentDoc = await FirebaseFirestore.instance.collection('users').doc(studentId).get();
-      return {
-        'studentId': studentId,
-        'name': studentDoc.data()?['name'] ?? 'Unknown',
-        'studentNumber': studentDoc.data()?['studentNumber'] ?? '',
-      };
-    }));
+    final students = await Future.wait(
+      query.docs.map((doc) async {
+        final studentId = doc.data()['studentId'];
+        final studentDoc =
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(studentId)
+                .get();
+        return {
+          'studentId': studentId,
+          'name': studentDoc.data()?['name'] ?? 'Unknown',
+          'studentNumber': studentDoc.data()?['studentNumber'] ?? '',
+        };
+      }),
+    );
 
     setState(() {
       _myStudents = students;
@@ -49,20 +57,27 @@ class _StudentsPageState extends State<StudentsPage> {
 
   Future<void> _searchStudent() async {
     final studentNumber = _studentNumberController.text.trim();
-    if (studentNumber.isEmpty || !studentNumber.startsWith('STU-') || studentNumber.length != 10) {
+    if (studentNumber.isEmpty ||
+        !studentNumber.startsWith('STU-') ||
+        studentNumber.length != 10) {
       setState(() {
-        _errorMessage = 'Please enter a valid student number (e.g., STU-123456)';
+        _errorMessage =
+            'Please enter a valid student number (e.g., STU-123456)';
         _foundStudent = null;
       });
       return;
     }
 
     try {
-      final query = await FirebaseFirestore.instance
-          .collection('users')
-          .where('studentNumber', isEqualTo: studentNumber)
-          .where('role', isEqualTo: 'Student')
-          .get();
+      final query =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .where('studentNumber', isEqualTo: studentNumber)
+              .where(
+                'role',
+                isEqualTo: 'student',
+              ) // Changed to lowercase to match Firestore data
+              .get();
 
       if (query.docs.isEmpty) {
         setState(() {
@@ -94,12 +109,13 @@ class _StudentsPageState extends State<StudentsPage> {
     if (user == null) return;
 
     try {
-      final existingRequest = await FirebaseFirestore.instance
-          .collection('requests')
-          .where('from', isEqualTo: user.uid)
-          .where('to', isEqualTo: studentId)
-          .where('status', isEqualTo: 'pending')
-          .get();
+      final existingRequest =
+          await FirebaseFirestore.instance
+              .collection('requests')
+              .where('from', isEqualTo: user.uid)
+              .where('to', isEqualTo: studentId)
+              .where('status', isEqualTo: 'pending')
+              .get();
 
       if (existingRequest.docs.isNotEmpty) {
         setState(() {
@@ -108,11 +124,12 @@ class _StudentsPageState extends State<StudentsPage> {
         return;
       }
 
-      final existingRelationship = await FirebaseFirestore.instance
-          .collection('relationships')
-          .where('instructorId', isEqualTo: user.uid)
-          .where('studentId', isEqualTo: studentId)
-          .get();
+      final existingRelationship =
+          await FirebaseFirestore.instance
+              .collection('relationships')
+              .where('instructorId', isEqualTo: user.uid)
+              .where('studentId', isEqualTo: studentId)
+              .get();
 
       if (existingRelationship.docs.isNotEmpty) {
         setState(() {
@@ -150,10 +167,10 @@ class _StudentsPageState extends State<StudentsPage> {
         .where('studentId', isEqualTo: studentId)
         .get()
         .then((snapshot) {
-      for (var doc in snapshot.docs) {
-        doc.reference.delete();
-      }
-    });
+          for (var doc in snapshot.docs) {
+            doc.reference.delete();
+          }
+        });
 
     setState(() {
       _myStudents.removeWhere((student) => student['studentId'] == studentId);
@@ -210,7 +227,10 @@ class _StudentsPageState extends State<StudentsPage> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    child: const Text('Search', style: TextStyle(color: Colors.white)),
+                    child: const Text(
+                      'Search',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ),
                 if (_errorMessage != null) ...[
@@ -224,7 +244,9 @@ class _StudentsPageState extends State<StudentsPage> {
                   const SizedBox(height: 20),
                   ListTile(
                     title: Text('Name: ${_foundStudent!['name']}'),
-                    subtitle: Text('Student Number: ${_foundStudent!['studentNumber']}'),
+                    subtitle: Text(
+                      'Student Number: ${_foundStudent!['studentNumber']}',
+                    ),
                     trailing: ElevatedButton(
                       onPressed: () => _sendRequest(_foundStudent!['id']),
                       style: ElevatedButton.styleFrom(
@@ -233,7 +255,10 @@ class _StudentsPageState extends State<StudentsPage> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      child: const Text('Send Request', style: TextStyle(color: Colors.white)),
+                      child: const Text(
+                        'Send Request',
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
                   ),
                 ],
@@ -248,23 +273,32 @@ class _StudentsPageState extends State<StudentsPage> {
                 ),
                 const SizedBox(height: 10),
                 if (_myStudents.isEmpty)
-                  const Text('No students added yet', style: TextStyle(fontSize: 16)),
+                  const Text(
+                    'No students added yet',
+                    style: TextStyle(fontSize: 16),
+                  ),
                 ..._myStudents.map((student) {
                   return ListTile(
                     title: Text(student['name']),
-                    subtitle: Text('Student Number: ${student['studentNumber']}'),
+                    subtitle: Text(
+                      'Student Number: ${student['studentNumber']}',
+                    ),
                     trailing: IconButton(
-                      icon: const Icon(Icons.person_remove, color: Color(0xFF424874)),
+                      icon: const Icon(
+                        Icons.person_remove,
+                        color: Color(0xFF424874),
+                      ),
                       onPressed: () => _unfriendStudent(student['studentId']),
                     ),
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => ProfilePage(
-                            role: 'Student',
-                            studentId: student['studentId'],
-                          ),
+                          builder:
+                              (_) => ProfilePage(
+                                role: 'Student',
+                                studentId: student['studentId'],
+                              ),
                         ),
                       );
                     },

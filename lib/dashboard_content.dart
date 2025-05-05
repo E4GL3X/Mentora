@@ -11,8 +11,6 @@ class DashboardContent extends StatefulWidget {
 }
 
 class _DashboardContentState extends State<DashboardContent> {
-  DateTime? cycleStartDate;
-  DateTime? cycleEndDate;
   DateTime? nextClassDate;
   DateTime? selectedDay;
   String? selectedStatus;
@@ -96,25 +94,6 @@ class _DashboardContentState extends State<DashboardContent> {
     if (user == null || selectedStudentId == null) return;
 
     try {
-      final cycleDoc = await FirebaseFirestore.instance
-          .collection('instructors')
-          .doc(user.uid)
-          .collection('cycles')
-          .doc(selectedStudentId)
-          .get();
-      if (cycleDoc.exists) {
-        final data = cycleDoc.data()!;
-        if (mounted) {
-          setState(() {
-            cycleStartDate = (data['startDate'] as Timestamp?)?.toDate();
-            cycleEndDate = (data['endDate'] as Timestamp?)?.toDate();
-            if (cycleEndDate != null && DateTime.now().isAfter(cycleEndDate!)) {
-              _resetCycle();
-            }
-          });
-        }
-      }
-
       final nextClassDoc = await FirebaseFirestore.instance
           .collection('instructors')
           .doc(user.uid)
@@ -165,90 +144,6 @@ class _DashboardContentState extends State<DashboardContent> {
     }
   }
 
-  Future<void> _resetCycle() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null || selectedStudentId == null) return;
-
-    try {
-      final currentCycle = await FirebaseFirestore.instance
-          .collection('instructors')
-          .doc(user.uid)
-          .collection('cycles')
-          .doc(selectedStudentId)
-          .get();
-      if (currentCycle.exists) {
-        await FirebaseFirestore.instance
-            .collection('instructors')
-            .doc(user.uid)
-            .collection('cycles')
-            .doc('cycle_${DateTime.now().millisecondsSinceEpoch}_${selectedStudentId}')
-            .set(currentCycle.data()!);
-      }
-
-      await FirebaseFirestore.instance
-          .collection('instructors')
-          .doc(user.uid)
-          .collection('cycles')
-          .doc(selectedStudentId)
-          .set({
-        'startDate': null,
-        'endDate': null,
-        'attendance': [],
-      });
-
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(selectedStudentId)
-          .collection('cycles')
-          .doc(user.uid)
-          .set({
-        'startDate': null,
-        'endDate': null,
-        'attendance': [],
-      });
-
-      if (mounted) {
-        setState(() {
-          cycleStartDate = null;
-          cycleEndDate = null;
-        });
-      }
-    } catch (e) {
-      throw Exception('Error resetting cycle: $e');
-    }
-  }
-
-  Future<void> _setCycleDates() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null || cycleStartDate == null || cycleEndDate == null || selectedStudentId == null) return;
-
-    try {
-      await FirebaseFirestore.instance
-          .collection('instructors')
-          .doc(user.uid)
-          .collection('cycles')
-          .doc(selectedStudentId)
-          .set({
-        'startDate': Timestamp.fromDate(cycleStartDate!),
-        'endDate': Timestamp.fromDate(cycleEndDate!),
-        'attendance': FieldValue.arrayUnion([]),
-      }, SetOptions(merge: true));
-
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(selectedStudentId)
-          .collection('cycles')
-          .doc(user.uid)
-          .set({
-        'startDate': Timestamp.fromDate(cycleStartDate!),
-        'endDate': Timestamp.fromDate(cycleEndDate!),
-        'attendance': FieldValue.arrayUnion([]),
-      }, SetOptions(merge: true));
-    } catch (e) {
-      throw Exception('Error setting cycle dates: $e');
-    }
-  }
-
   Future<void> _submitAttendance() async {
     if (selectedDay == null || selectedStatus == null || selectedStudentId == null) return;
 
@@ -259,16 +154,17 @@ class _DashboardContentState extends State<DashboardContent> {
       final attendanceEntry = {
         'date': Timestamp.fromDate(selectedDay!),
         'status': selectedStatus,
+        'studentId': selectedStudentId, // Include studentId in the attendance entry
       };
 
       await FirebaseFirestore.instance
           .collection('instructors')
           .doc(user.uid)
           .collection('cycles')
-          .doc(selectedStudentId)
-          .update({
+          .doc('current_cycle_$selectedStudentId') // Use a unique doc ID for the cycle
+          .set({
         'attendance': FieldValue.arrayUnion([attendanceEntry]),
-      });
+      }, SetOptions(merge: true));
 
       await FirebaseFirestore.instance
           .collection('users')
@@ -445,8 +341,6 @@ class _DashboardContentState extends State<DashboardContent> {
                   print('Dropdown changed to: $value');
                   setState(() {
                     selectedStudentId = value;
-                    cycleStartDate = null;
-                    cycleEndDate = null;
                     nextClassDate = null;
                     selectedDay = null;
                     selectedStatus = null;
@@ -505,150 +399,67 @@ class _DashboardContentState extends State<DashboardContent> {
               ),
             ),
             const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Expanded(
-                  child: Card(
-                    color: const Color(0xFFA6B1E1),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: SizedBox(
-                      height: 140,
-                      child: Padding(
-                        padding: const EdgeInsets.all(10.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Cycle Dates',
-                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                                ),
-                                Text(
-                                  'Start: ${cycleStartDate?.toString().substring(0, 10) ?? 'Not set'}',
-                                  style: const TextStyle(fontSize: 12),
-                                ),
-                                Text(
-                                  'End: ${cycleEndDate?.toString().substring(0, 10) ?? 'Not set'}',
-                                  style: const TextStyle(fontSize: 12),
-                                ),
-                              ],
+            Card(
+              color: const Color(0xFFA6B1E1),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: SizedBox(
+                height: 140,
+                child: Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Next Class',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            nextClassDate?.toString().substring(0, 10) ?? 'Not set',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ],
+                      ),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 40,
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            print('Update Next Class button pressed');
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: nextClassDate ?? DateTime.now(),
+                              firstDate: DateTime.now(),
+                              lastDate: DateTime(2030),
+                            );
+                            if (picked != null) {
+                              setState(() {
+                                nextClassDate = picked;
+                                _setNextClassDate();
+                              });
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF424874),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                            SizedBox(
-                              width: double.infinity,
-                              height: 40,
-                              child: ElevatedButton(
-                                onPressed: () async {
-                                  print('Cycle Date button pressed');
-                                  final picked = await showDatePicker(
-                                    context: context,
-                                    initialDate: cycleStartDate ?? DateTime.now(),
-                                    firstDate: DateTime(2020),
-                                    lastDate: DateTime(2030),
-                                  );
-                                  if (picked != null) {
-                                    setState(() {
-                                      if (cycleStartDate == null) {
-                                        cycleStartDate = picked;
-                                      } else if (cycleEndDate == null && picked.isAfter(cycleStartDate!)) {
-                                        cycleEndDate = picked;
-                                        _setCycleDates();
-                                      } else {
-                                        cycleStartDate = picked;
-                                        cycleEndDate = null;
-                                      }
-                                    });
-                                  }
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF424874),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                                child: const Text(
-                                  'Add',
-                                  style: TextStyle(fontSize: 12, color: Colors.white),
-                                ),
-                              ),
-                            ),
-                          ],
+                          ),
+                          child: const Text(
+                            'Update Next Class',
+                            style: TextStyle(fontSize: 12, color: Colors.white),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Card(
-                    color: const Color(0xFFA6B1E1),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: SizedBox(
-                      height: 140,
-                      child: Padding(
-                        padding: const EdgeInsets.all(10.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Next Class',
-                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                                ),
-                                Text(
-                                  nextClassDate?.toString().substring(0, 10) ?? 'Not set',
-                                  style: const TextStyle(fontSize: 12),
-                                ),
-                              ],
-                            ),
-                            SizedBox(
-                              width: double.infinity,
-                              height: 40,
-                              child: ElevatedButton(
-                                onPressed: () async {
-                                  print('Next Class button pressed');
-                                  final picked = await showDatePicker(
-                                    context: context,
-                                    initialDate: nextClassDate ?? DateTime.now(),
-                                    firstDate: DateTime.now(),
-                                    lastDate: DateTime(2030),
-                                  );
-                                  if (picked != null) {
-                                    setState(() {
-                                      nextClassDate = picked;
-                                      _setNextClassDate();
-                                    });
-                                  }
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF424874),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                                child: const Text(
-                                  'Add',
-                                  style: TextStyle(fontSize: 12, color: Colors.white),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
             const SizedBox(height: 20),
             Card(

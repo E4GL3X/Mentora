@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mentora/signup_page.dart';
@@ -60,14 +59,15 @@ class _LoginPageState extends State<LoginPage> {
         // Explicitly check if document exists
         final bool docExists = userDoc.exists;
 
-        // Safely fetch role with type casting
+        // Safely fetch role with type casting and debug
         final String role =
             docExists
                 ? (userDoc.data()?['role'] as String? ?? 'Student')
                 : 'Student';
+        print('Retrieved role: $role'); // Debug print
 
         // Navigate based on role, clearing the navigation stack
-        if (role == 'Instructor') {
+        if (role.toLowerCase() == 'instructor') {
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (_) => const InstructorHome()),
@@ -138,7 +138,7 @@ class _LoginPageState extends State<LoginPage> {
                   TextField(
                     controller: emailController,
                     decoration: InputDecoration(
-                      hintText: 'example@email.com',
+                      hintText: 'Email',
                       filled: true,
                       fillColor: const Color(0xFFDCD6F7),
                       border: OutlineInputBorder(

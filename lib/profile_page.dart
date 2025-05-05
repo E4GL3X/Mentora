@@ -5,7 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfilePage extends StatefulWidget {
   final String role;
-  final String? studentId; // Optional: For instructors viewing a student's profile
+  final String?
+  studentId; // Optional: For instructors viewing a student's profile
 
   const ProfilePage({super.key, required this.role, this.studentId});
 
@@ -13,7 +14,8 @@ class ProfilePage extends StatefulWidget {
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage> with AutomaticKeepAliveClientMixin {
+class _ProfilePageState extends State<ProfilePage>
+    with AutomaticKeepAliveClientMixin {
   String? name;
   String? email;
   String? school;
@@ -42,11 +44,14 @@ class _ProfilePageState extends State<ProfilePage> with AutomaticKeepAliveClient
   void initState() {
     super.initState();
     if (widget.studentId != null) {
-      _loadStudentData(widget.studentId!); // Load student data if viewing a student
+      _loadStudentData(
+        widget.studentId!,
+      ); // Load student data if viewing a student
     } else {
       _loadCachedData();
       _loadProfileData();
-      if (widget.role == 'Student') {
+      if (widget.role.toLowerCase() == 'student') {
+        // Use lowercase for consistency
         _loadPendingRequests();
       }
     }
@@ -75,7 +80,8 @@ class _ProfilePageState extends State<ProfilePage> with AutomaticKeepAliveClient
       addressController.text = address ?? '';
       phoneController.text = phone ?? '';
       bloodGroupController.text = bloodGroup ?? '';
-      avatarUrl = 'https://robohash.org/${Uri.encodeComponent(name ?? user.uid)}?size=200x200&set=set1';
+      avatarUrl =
+          'https://robohash.org/${Uri.encodeComponent(name ?? user.uid)}?size=200x200&set=set1';
     });
   }
 
@@ -84,7 +90,11 @@ class _ProfilePageState extends State<ProfilePage> with AutomaticKeepAliveClient
     if (user == null) return;
 
     try {
-      final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      final doc =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .get();
       if (doc.exists) {
         final prefs = await SharedPreferences.getInstance();
         setState(() {
@@ -105,7 +115,8 @@ class _ProfilePageState extends State<ProfilePage> with AutomaticKeepAliveClient
           addressController.text = address ?? '';
           phoneController.text = phone ?? '';
           bloodGroupController.text = bloodGroup ?? '';
-          avatarUrl = 'https://robohash.org/${Uri.encodeComponent(name ?? user.uid)}?size=200x200&set=set1';
+          avatarUrl =
+              'https://robohash.org/${Uri.encodeComponent(name ?? user.uid)}?size=200x200&set=set1';
         });
 
         await prefs.setString('name_${user.uid}', name ?? '');
@@ -127,7 +138,11 @@ class _ProfilePageState extends State<ProfilePage> with AutomaticKeepAliveClient
 
   Future<void> _loadStudentData(String studentId) async {
     try {
-      final doc = await FirebaseFirestore.instance.collection('users').doc(studentId).get();
+      final doc =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(studentId)
+              .get();
       if (doc.exists) {
         setState(() {
           name = doc.data()?['name'] ?? 'No name';
@@ -139,7 +154,8 @@ class _ProfilePageState extends State<ProfilePage> with AutomaticKeepAliveClient
           phone = doc.data()?['phone'] ?? '';
           bloodGroup = doc.data()?['bloodGroup'] ?? '';
           studentNumber = doc.data()?['studentNumber'];
-          avatarUrl = 'https://robohash.org/${Uri.encodeComponent(name ?? studentId)}?size=200x200&set=set1';
+          avatarUrl =
+              'https://robohash.org/${Uri.encodeComponent(name ?? studentId)}?size=200x200&set=set1';
         });
       }
     } catch (e) {
@@ -151,22 +167,29 @@ class _ProfilePageState extends State<ProfilePage> with AutomaticKeepAliveClient
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    final query = await FirebaseFirestore.instance
-        .collection('requests')
-        .where('to', isEqualTo: user.uid)
-        .where('status', isEqualTo: 'pending')
-        .get();
+    final query =
+        await FirebaseFirestore.instance
+            .collection('requests')
+            .where('to', isEqualTo: user.uid)
+            .where('status', isEqualTo: 'pending')
+            .get();
 
-    final requests = await Future.wait(query.docs.map((doc) async {
-      final requestData = doc.data();
-      final instructorId = requestData['from'];
-      final instructorDoc = await FirebaseFirestore.instance.collection('users').doc(instructorId).get();
-      return {
-        'requestId': doc.id,
-        'instructorName': instructorDoc.data()?['name'] ?? 'Unknown',
-        'instructorId': instructorId,
-      };
-    }));
+    final requests = await Future.wait(
+      query.docs.map((doc) async {
+        final requestData = doc.data();
+        final instructorId = requestData['from'];
+        final instructorDoc =
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(instructorId)
+                .get();
+        return {
+          'requestId': doc.id,
+          'instructorName': instructorDoc.data()?['name'] ?? 'Unknown',
+          'instructorId': instructorId,
+        };
+      }),
+    );
 
     setState(() {
       pendingRequests = requests;
@@ -185,7 +208,10 @@ class _ProfilePageState extends State<ProfilePage> with AutomaticKeepAliveClient
       });
 
       // Delete request
-      await FirebaseFirestore.instance.collection('requests').doc(requestId).delete();
+      await FirebaseFirestore.instance
+          .collection('requests')
+          .doc(requestId)
+          .delete();
 
       // Refresh requests
       await _loadPendingRequests();
@@ -196,7 +222,10 @@ class _ProfilePageState extends State<ProfilePage> with AutomaticKeepAliveClient
 
   Future<void> _declineRequest(String requestId) async {
     try {
-      await FirebaseFirestore.instance.collection('requests').doc(requestId).delete();
+      await FirebaseFirestore.instance
+          .collection('requests')
+          .doc(requestId)
+          .delete();
       await _loadPendingRequests();
     } catch (e) {
       print('Error declining request: $e');
@@ -208,9 +237,9 @@ class _ProfilePageState extends State<ProfilePage> with AutomaticKeepAliveClient
     if (user == null) return;
 
     if (nameController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Name cannot be empty')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Name cannot be empty')));
       return;
     }
 
@@ -224,8 +253,10 @@ class _ProfilePageState extends State<ProfilePage> with AutomaticKeepAliveClient
         'address': addressController.text,
         'phone': phoneController.text,
         'bloodGroup': bloodGroupController.text,
-        'role': widget.role,
-        if (widget.role == 'Student') 'studentNumber': studentNumber,
+        'role':
+            widget.role.toLowerCase(), // Save role as lowercase for consistency
+        if (widget.role.toLowerCase() == 'student')
+          'studentNumber': studentNumber,
       }, SetOptions(merge: true));
     } catch (e) {
       print('Error saving to Firestore: $e');
@@ -251,7 +282,8 @@ class _ProfilePageState extends State<ProfilePage> with AutomaticKeepAliveClient
       phone = phoneController.text;
       bloodGroup = bloodGroupController.text;
       isEditing = false;
-      avatarUrl = 'https://robohash.org/${Uri.encodeComponent(name ?? user.uid)}?size=200x200&set=set1';
+      avatarUrl =
+          'https://robohash.org/${Uri.encodeComponent(name ?? user.uid)}?size=200x200&set=set1';
     });
   }
 
@@ -268,21 +300,18 @@ class _ProfilePageState extends State<ProfilePage> with AutomaticKeepAliveClient
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.black),
-                      onPressed: () => Navigator.pop(context),
-                    ),
                     Text(
-                      widget.studentId != null ? 'Student Profile' : widget.role,
+                      widget.studentId != null
+                          ? 'Student Profile'
+                          : widget.role,
                       style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF424874),
                       ),
                     ),
-                    const SizedBox(width: 48),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -290,9 +319,7 @@ class _ProfilePageState extends State<ProfilePage> with AutomaticKeepAliveClient
                   Container(
                     width: 150,
                     height: 150,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                    ),
+                    decoration: BoxDecoration(shape: BoxShape.circle),
                     child: ClipOval(
                       child: Image.network(
                         avatarUrl!,
@@ -309,45 +336,74 @@ class _ProfilePageState extends State<ProfilePage> with AutomaticKeepAliveClient
                         },
                         loadingBuilder: (context, child, loadingProgress) {
                           if (loadingProgress == null) return child;
-                          return const Center(child: CircularProgressIndicator());
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
                         },
                       ),
                     ),
                   ),
-                const SizedBox(height: 60),
+                const SizedBox(height: 20),
                 Text(
-                  widget.studentId != null ? 'Student Details' : '${widget.role} Details',
+                  widget.studentId != null
+                      ? 'Student Details'
+                      : '${widget.role} Details',
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF424874),
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 10),
                 if (!isEditing || widget.studentId != null)
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Name: $name', style: const TextStyle(fontSize: 16)),
                       const SizedBox(height: 8),
-                      Text('Email: $email', style: const TextStyle(fontSize: 16)),
+                      Text(
+                        'Email: $email',
+                        style: const TextStyle(fontSize: 16),
+                      ),
                       const SizedBox(height: 8),
-                      Text('Phone: $phone', style: const TextStyle(fontSize: 16)),
+                      Text(
+                        'Phone: $phone',
+                        style: const TextStyle(fontSize: 16),
+                      ),
                       const SizedBox(height: 8),
-                      Text('School: $school', style: const TextStyle(fontSize: 16)),
+                      Text(
+                        'School: $school',
+                        style: const TextStyle(fontSize: 16),
+                      ),
                       const SizedBox(height: 8),
-                      Text('College: $college', style: const TextStyle(fontSize: 16)),
+                      Text(
+                        'College: $college',
+                        style: const TextStyle(fontSize: 16),
+                      ),
                       const SizedBox(height: 8),
-                      Text('University: $university', style: const TextStyle(fontSize: 16)),
+                      Text(
+                        'University: $university',
+                        style: const TextStyle(fontSize: 16),
+                      ),
                       const SizedBox(height: 8),
-                      Text('Address: $address', style: const TextStyle(fontSize: 16)),
+                      Text(
+                        'Address: $address',
+                        style: const TextStyle(fontSize: 16),
+                      ),
                       const SizedBox(height: 8),
-                      Text('Blood Group: $bloodGroup', style: const TextStyle(fontSize: 16)),
+                      Text(
+                        'Blood Group: $bloodGroup',
+                        style: const TextStyle(fontSize: 16),
+                      ),
                       if (studentNumber != null) ...[
                         const SizedBox(height: 8),
-                        Text('Student Number: $studentNumber', style: const TextStyle(fontSize: 16)),
+                        Text(
+                          'Student Number: $studentNumber',
+                          style: const TextStyle(fontSize: 16),
+                        ),
                       ],
-                      if (widget.studentId == null && widget.role == 'Student') ...[
+                      if (widget.studentId == null &&
+                          widget.role.toLowerCase() == 'student') ...[
                         const SizedBox(height: 20),
                         const Text(
                           'Pending Requests',
@@ -359,7 +415,10 @@ class _ProfilePageState extends State<ProfilePage> with AutomaticKeepAliveClient
                         ),
                         const SizedBox(height: 10),
                         if (pendingRequests.isEmpty)
-                          const Text('No pending requests', style: TextStyle(fontSize: 16)),
+                          const Text(
+                            'No pending requests',
+                            style: TextStyle(fontSize: 16),
+                          ),
                         ...pendingRequests.map((request) {
                           return ListTile(
                             title: Text('From: ${request['instructorName']}'),
@@ -367,12 +426,24 @@ class _ProfilePageState extends State<ProfilePage> with AutomaticKeepAliveClient
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 IconButton(
-                                  icon: const Icon(Icons.check, color: Colors.green),
-                                  onPressed: () => _acceptRequest(request['requestId'], request['instructorId']),
+                                  icon: const Icon(
+                                    Icons.check,
+                                    color: Colors.green,
+                                  ),
+                                  onPressed:
+                                      () => _acceptRequest(
+                                        request['requestId'],
+                                        request['instructorId'],
+                                      ),
                                 ),
                                 IconButton(
-                                  icon: const Icon(Icons.close, color: Colors.red),
-                                  onPressed: () => _declineRequest(request['requestId']),
+                                  icon: const Icon(
+                                    Icons.close,
+                                    color: Colors.red,
+                                  ),
+                                  onPressed:
+                                      () =>
+                                          _declineRequest(request['requestId']),
                                 ),
                               ],
                             ),
@@ -392,7 +463,10 @@ class _ProfilePageState extends State<ProfilePage> with AutomaticKeepAliveClient
                             child: CircleAvatar(
                               radius: 30,
                               backgroundColor: const Color(0xFFA6B1E1),
-                              child: const Icon(Icons.edit, color: Colors.white),
+                              child: const Icon(
+                                Icons.edit,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ),
@@ -431,7 +505,9 @@ class _ProfilePageState extends State<ProfilePage> with AutomaticKeepAliveClient
                       const SizedBox(height: 8),
                       TextField(
                         controller: universityController,
-                        decoration: const InputDecoration(labelText: 'University'),
+                        decoration: const InputDecoration(
+                          labelText: 'University',
+                        ),
                       ),
                       const SizedBox(height: 8),
                       TextField(
@@ -441,8 +517,22 @@ class _ProfilePageState extends State<ProfilePage> with AutomaticKeepAliveClient
                       const SizedBox(height: 8),
                       TextField(
                         controller: bloodGroupController,
-                        decoration: const InputDecoration(labelText: 'Blood Group'),
+                        decoration: const InputDecoration(
+                          labelText: 'Blood Group',
+                        ),
                       ),
+                      if (widget.role.toLowerCase() == 'student') ...[
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: TextEditingController(
+                            text: studentNumber ?? '',
+                          ),
+                          decoration: const InputDecoration(
+                            labelText: 'Student Number',
+                          ),
+                          enabled: false, // Make it read-only
+                        ),
+                      ],
                       const SizedBox(height: 16),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -455,7 +545,10 @@ class _ProfilePageState extends State<ProfilePage> with AutomaticKeepAliveClient
                                 borderRadius: BorderRadius.circular(10),
                               ),
                             ),
-                            child: const Text('Save', style: TextStyle(color: Colors.white)),
+                            child: const Text(
+                              'Save',
+                              style: TextStyle(color: Colors.white),
+                            ),
                           ),
                           ElevatedButton(
                             onPressed: () {
@@ -477,7 +570,10 @@ class _ProfilePageState extends State<ProfilePage> with AutomaticKeepAliveClient
                                 borderRadius: BorderRadius.circular(10),
                               ),
                             ),
-                            child: const Text('Cancel', style: TextStyle(color: Colors.white)),
+                            child: const Text(
+                              'Cancel',
+                              style: TextStyle(color: Colors.white),
+                            ),
                           ),
                         ],
                       ),

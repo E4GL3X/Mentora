@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:mentora/login_page.dart';
+import 'package:intl/intl.dart'; // For formatting dates (e.g., month name)
 
 class AttendanceHistoryPage extends StatefulWidget {
   const AttendanceHistoryPage({super.key});
@@ -28,11 +28,59 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
         .doc(user.uid)
         .collection('cycles')
         .get();
+
+    // Process each cycle document
+    final cycles = await Future.wait(historySnapshot.docs.map((doc) async {
+      final cycleData = doc.data();
+      final attendanceList = (cycleData['attendance'] as List<dynamic>?) ?? [];
+
+      // Group attendance by studentId and month
+      final Map<String, Map<String, List<Map<String, dynamic>>>> groupedByStudentAndMonth = {};
+      for (var entry in attendanceList) {
+        final studentId = entry['studentId'] as String?;
+        final date = (entry['date'] as Timestamp?)?.toDate();
+        if (studentId == null || date == null) continue;
+
+        // Fetch student name
+        final studentDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(studentId)
+            .get();
+        final studentName = studentDoc.data()?['name'] ?? 'Unknown';
+
+        // Extract month name from the date
+        final monthName = DateFormat('MMMM').format(date); // e.g., "January"
+
+        // Group by studentId and then by month
+        if (!groupedByStudentAndMonth.containsKey(studentId)) {
+          groupedByStudentAndMonth[studentId] = {};
+        }
+        if (!groupedByStudentAndMonth[studentId]!.containsKey(monthName)) {
+          groupedByStudentAndMonth[studentId]![monthName] = [];
+        }
+        groupedByStudentAndMonth[studentId]![monthName]!.add({
+          'name': studentName,
+          'status': entry['status'] ?? 'Unknown',
+        });
+      }
+
+      // Flatten the grouped data into a list for display
+      final List<Map<String, dynamic>> cycleEntries = [];
+      groupedByStudentAndMonth.forEach((studentId, months) {
+        months.forEach((month, entries) {
+          cycleEntries.add({
+            'studentId': studentId,
+            'month': month,
+            'attendance': entries,
+          });
+        });
+      });
+
+      return cycleEntries;
+    }).toList());
+
     setState(() {
-      cycleHistory = historySnapshot.docs
-          .where((doc) => !doc.id.startsWith('current'))
-          .map((doc) => doc.data())
-          .toList();
+      cycleHistory = cycles.expand((entry) => entry).toList();
     });
   }
 
@@ -63,46 +111,63 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
                       itemCount: cycleHistory.length,
                       itemBuilder: (context, index) {
                         final cycle = cycleHistory[index];
-                        final attendance = (cycle['attendance'] as List<dynamic>?) ?? [];
-                        final presentCount = attendance
+                        final month = cycle['month'] as String;
+                        final attendanceEntries = cycle['attendance'] as List<Map<String, dynamic>>;
+                        final studentName = attendanceEntries.isNotEmpty
+                            ? attendanceEntries.first['name']
+                            : 'Unknown';
+
+                        // Calculate status counts
+                        final presentCount = attendanceEntries
                             .where((entry) => entry['status'] == 'Present')
                             .length;
-                        final absentCount = attendance
+                        final absentCount = attendanceEntries
                             .where((entry) => entry['status'] == 'Absent')
                             .length;
-                        final rescheduledCount = attendance
+                        final rescheduledCount = attendanceEntries
                             .where((entry) => entry['status'] == 'Rescheduled')
                             .length;
-                        final extraClassCount = attendance
+                        final extraClassCount = attendanceEntries
                             .where((entry) => entry['status'] == 'Extra Class')
                             .length;
-                        final cancelledCount = attendance
+                        final cancelledCount = attendanceEntries
                             .where((entry) => entry['status'] == 'Cancelled by Student')
                             .length;
 
-                        return Card(
-                          color: const Color(0xFFDCD6F7),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15),
-                            side: const BorderSide(color: Color(0xFFA6B1E1)),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Month ${index + 1} (${cycle['startDate']?.toDate().toString().substring(0, 10)} - ${cycle['endDate']?.toDate().toString().substring(0, 10)})',
-                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 20.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                studentName,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF424874),
                                 ),
-                                const SizedBox(height: 10),
-                                Text('Present: $presentCount'),
-                                Text('Absent: $absentCount'),
-                                Text('Rescheduled: $rescheduledCount'),
-                                Text('Extra Classes: $extraClassCount'),
-                                Text('Cancelled by Student: $cancelledCount'),
-                              ],
-                            ),
+                              ),
+                              const SizedBox(height: 5),
+                              Text(
+                                month,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF424874),
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Present $presentCount'),
+                                  Text('Absent $absentCount'),
+                                  Text('Rescheduled $rescheduledCount'),
+                                  Text('Extra Class $extraClassCount'),
+                                  Text('Cancelled by Student $cancelledCount'),
+                                ],
+                              ),
+                            ],
                           ),
                         );
                       },

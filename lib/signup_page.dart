@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -19,6 +20,33 @@ class _SignupPageState extends State<SignupPage> {
   bool _isLoading = false;
   String? _errorMessage;
 
+  // Generate a unique six-digit student number in the format STU-123456
+  Future<String> _generateUniqueStudentNumber() async {
+    const prefix = 'STU-';
+    const digitsLength = 6;
+    final random = Random();
+    String studentNumber;
+
+    while (true) {
+      // Generate a random six-digit number
+      final number = random.nextInt(999999 - 100000) + 100000; // Ensures 6 digits
+      studentNumber = '$prefix$number';
+
+      // Check if this student number already exists in Firestore
+      final query = await FirebaseFirestore.instance
+          .collection('users')
+          .where('studentNumber', isEqualTo: studentNumber)
+          .get();
+
+      if (query.docs.isEmpty) {
+        // No duplicate found, this student number is unique
+        break;
+      }
+    }
+
+    return studentNumber;
+  }
+
   Future<void> _signUp() async {
     setState(() {
       _isLoading = true;
@@ -31,15 +59,48 @@ class _SignupPageState extends State<SignupPage> {
         password: _passwordController.text.trim(),
       );
 
+      // Generate unique student number if role is student
+      String? studentNumber;
+      if (_selectedRole == 'student') {
+        studentNumber = await _generateUniqueStudentNumber();
+      }
+
+      // Send email verification
+      await userCredential.user!.sendEmailVerification();
+
+      // Save user data to Firestore
       await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set({
         'email': _emailController.text.trim(),
         'name': _nameController.text.trim(),
         'role': _selectedRole,
+        if (studentNumber != null) 'studentNumber': studentNumber,
       });
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginPage()),
+      // Show confirmation dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Email Verification'),
+            content: const Text('Check your email for a verification link and verify your account.'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoginPage()),
+                  );
+                },
+                child: const Text(
+                  'OK',
+                  style: TextStyle(color: Color(0xFF313287)),
+                ),
+              ),
+            ],
+          );
+        },
       );
     } catch (e) {
       setState(() {
@@ -96,7 +157,7 @@ class _SignupPageState extends State<SignupPage> {
                     child: TextField(
                       controller: _nameController,
                       decoration: const InputDecoration(
-                        hintText: 'Name',
+                        hintText: 'Enter Your Name',
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       ),
@@ -118,7 +179,7 @@ class _SignupPageState extends State<SignupPage> {
                     child: TextField(
                       controller: _emailController,
                       decoration: const InputDecoration(
-                        hintText: 'Email',
+                        hintText: 'Enter Your Email',
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       ),
@@ -141,7 +202,7 @@ class _SignupPageState extends State<SignupPage> {
                       controller: _passwordController,
                       obscureText: !_isPasswordVisible,
                       decoration: InputDecoration(
-                        hintText: 'Password',
+                        hintText: 'Create Password (min 6 characters)',
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                         suffixIcon: IconButton(
@@ -169,7 +230,7 @@ class _SignupPageState extends State<SignupPage> {
                       ),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     ),
-                    hint: const Text('Select Role'),
+                    hint: const Text('Join as'),
                     value: _selectedRole,
                     items: ['student', 'instructor'].map((role) {
                       return DropdownMenuItem<String>(
