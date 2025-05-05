@@ -61,7 +61,7 @@ class _StudentHomePageState extends State<StudentHomePage> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    // Real-time next class updates
+    // Real-time updates for next class and payment reminder
     _nextClassSubscription = FirebaseFirestore.instance
         .collection('users')
         .doc(user.uid)
@@ -226,7 +226,8 @@ class _StudentHomePageState extends State<StudentHomePage> {
                 ),
               ],
             ),
-            const SizedBox(height: 50),
+            const SizedBox(height: 20),
+            // Payment Reminder Message
             Center(
               child: SvgPicture.asset(
                 'assets/images/student.svg',
@@ -238,7 +239,7 @@ class _StudentHomePageState extends State<StudentHomePage> {
                 ),
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 50),
             const Text(
               'Student Dashboard',
               style: TextStyle(
@@ -246,6 +247,35 @@ class _StudentHomePageState extends State<StudentHomePage> {
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF2E5077), // Dark Blue
               ),
+            ),
+            const SizedBox(height: 40),
+            StreamBuilder<DocumentSnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(FirebaseAuth.instance.currentUser?.uid)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const SizedBox.shrink();
+                }
+                if (snapshot.hasError || !snapshot.hasData) {
+                  return const Text(
+                    'Error loading payment status',
+                    style: TextStyle(color: Colors.red),
+                  );
+                }
+                final paymentReminder = (snapshot.data!.data() as Map<String, dynamic>)['paymentReminder'] ?? false;
+                return Text(
+                  paymentReminder
+                      ? 'Tuition fee is due. Please ensure timely payment.'
+                      : 'No due tuition fee',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: paymentReminder ? Colors.red : Colors.green,
+                    fontWeight: FontWeight.bold,
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 20),
             Text(

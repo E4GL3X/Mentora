@@ -23,6 +23,7 @@ class _DashboardContentState extends State<DashboardContent> {
   String? selectedStudentId;
   bool isLoading = true;
   String? error;
+  bool paymentReminder = false; // Track payment reminder status for the selected student
 
   @override
   void initState() {
@@ -39,7 +40,10 @@ class _DashboardContentState extends State<DashboardContent> {
     });
     try {
       await _loadStudents();
-      if (selectedStudentId != null) await _loadCycleData();
+      if (selectedStudentId != null) {
+        await _loadCycleData();
+        await _loadPaymentReminder();
+      }
     } catch (e) {
       setState(() {
         error = 'Failed to load data: $e';
@@ -124,6 +128,40 @@ class _DashboardContentState extends State<DashboardContent> {
       }
     } catch (e) {
       throw Exception('Error loading cycle data: $e');
+    }
+  }
+
+  Future<void> _loadPaymentReminder() async {
+    if (selectedStudentId == null) return;
+
+    try {
+      final studentDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(selectedStudentId)
+          .get();
+      if (studentDoc.exists && mounted) {
+        setState(() {
+          paymentReminder = studentDoc.data()!['paymentReminder'] ?? false;
+        });
+      }
+    } catch (e) {
+      throw Exception('Error loading payment reminder: $e');
+    }
+  }
+
+  Future<void> _togglePaymentReminder() async {
+    if (selectedStudentId == null) return;
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(selectedStudentId)
+          .update({'paymentReminder': !paymentReminder});
+      setState(() {
+        paymentReminder = !paymentReminder;
+      });
+    } catch (e) {
+      throw Exception('Error toggling payment reminder: $e');
     }
   }
 
@@ -412,9 +450,58 @@ class _DashboardContentState extends State<DashboardContent> {
                     nextClassDate = null;
                     selectedDay = null;
                     selectedStatus = null;
+                    paymentReminder = false; // Reset payment reminder
                     _loadCycleData();
+                    _loadPaymentReminder();
                   });
                 },
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Payment Reminder Button
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: selectedStudentId != null
+                    ? () {
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Payment Reminder'),
+                            content: Text(paymentReminder
+                                ? 'Turn off payment reminder for this student?'
+                                : 'Send a payment reminder to this student?'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text('Cancel', style: TextStyle(color: Color(0xFF2E5077))),
+                              ),
+                              TextButton(
+                                onPressed: () async {
+                                  await _togglePaymentReminder();
+                                  Navigator.pop(context);
+                                },
+                                child: Text(
+                                  paymentReminder ? 'Turn Off' : 'Send',
+                                  style: const TextStyle(color: Colors.red),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                    : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: paymentReminder ? const Color(0xFFFFB703) : const Color(0xFF424874),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                ),
+                child: Text(
+                  paymentReminder ? 'Reminder On' : 'Payment Reminder',
+                  style: const TextStyle(color: Colors.white),
+                ),
               ),
             ),
             const SizedBox(height: 20),
