@@ -1,50 +1,77 @@
-# Mentora 🎓📱
+# 📘 Mentora
 
-Mentora is a smart tuition tracking and management app designed for teachers and students. Built with **Flutter** and **Firebase**, it streamlines class attendance, homework tracking, and tuition payments — all in one app.
-
----
-
-## 🔧 Tech Stack
-
-- **Frontend**: Flutter with Riverpod (or BLoC)
-- **Backend**: Firebase
-- **Authentication**: Firebase Auth
-- **Database**: Cloud Firestore
-- **Notifications**: Firebase Cloud Messaging (planned)
-- **Deployment**: Android & iOS support (Web coming soon)
+**Mentora** is a smart, intuitive tuition tracking and communication app designed for instructors and students to manage classes, assignments, payments, and attendance seamlessly. It simplifies day-to-day tutoring operations while enhancing the educational experience for both instructors and learners.
 
 ---
 
 ## ✨ Features
 
-### 👨‍🏫 For Teachers:
-- ✅ Login and account creation
-- 📋 Manage student list per batch/class
-- 🗓️ Mark daily **attendance**
-- 📝 Track **homework submissions**
-- 💸 Track **tuition payments** per student
-- 📤 Automatically send **email reminders** to:
-  - Students/guardians who missed homework
-  - Students who missed payments
-- 🔔 View batch-wise notifications & summaries
+🔐 **Gmail-Verified Account Creation**  
+Instructors and students can create accounts securely using Gmail verification.
 
-### 👩‍🎓 For Students:
-- ✅ Login and join teacher-assigned classes
-- 📅 View attendance history
-- 📚 View homework assigned and submission status
-- 💳 View tuition payment history and due status
-- 📧 Receive email reminders
+👨‍🏫 **Instructor–Student Circle Management**  
+- Instructors can search and send connection requests to students using a unique 6-digit student ID (e.g., `STU-123456`).  
+- Students can accept these requests to join the instructor’s circle.
+
+🗓️ **Class Management**  
+- Instructors can update the date and time of the next class.  
+- Students can view upcoming class details.
+
+📢 **Announcements & Assignments**  
+- Instructors can post announcements and update assignments.  
+- Students can view assignments and mark them as **Done ✅** or **Not Done ❌**, which instructors can monitor in real-time.
+
+💰 **Payment Tracking**  
+- Instructors can send payment due notifications.  
+- Students can check their payment status from the dashboard.
+
+👥 **Unfriend Feature**  
+- Instructors have the ability to remove students from their circle at any time.
+
+📊 **Attendance Monitoring**  
+- Both instructors and students can track:  
+  - Number of classes **present** ✅  
+  - Number of classes **absent** ❌  
+  - Number of **rescheduled classes** 🔄  
+  - Number of **cancelled classes by the student** 🚫
 
 ---
 
-## 🗂️ Folder Structure (Coming Soon)
-A detailed structure will be added once the app reaches MVP.
+## 🧭 User Guide
+
+📌 **1. Sign Up**  
+- Provide a valid Gmail address.  
+- Select your role: `Instructor` or `Student`.  
+- Verify your email via the confirmation mail sent to your inbox.
+
+🔐 **2. Log In**  
+- Enter your verified email and password to access your dashboard.
+
+🔍 **3. Connecting with Students (for Instructors)**  
+- Each student receives a unique ID upon registration (e.g., `STU-123456`).  
+- Use the **Search Student** feature to locate students by their ID and send a request.
+
+📥 **4. Accepting Instructor Requests (for Students)**  
+- Navigate to your **Profile** to view pending requests.  
+- Accept to join the instructor’s circle and begin collaboration.
+
+📂 **5. Dashboard Functions (for Instructors)**  
+- Select a student to:  
+  - Update **payment status**  
+  - Set **next class schedule**  
+  - Record **attendance**  
+  - Add **assignments** and **announcements**
+
+👨‍🎓 **6. Dashboard Functions (for Students)**  
+- View all updates related to:  
+  - **Upcoming classes** 📅  
+  - **Assignment status** 📝  
+  - **Payment status** 💸  
+  - **Attendance log** 📈  
+  - **Announcements** 📣  
+- Mark assignments as "Done" or "Not Done Yet".
 
 ---
 
-## 🚀 Getting Started
-
-### 1. Clone the Repository
-```bash
-git clone https://github.com/your-username/mentora.git
-cd mentora
+Thank you for choosing **Mentora** — your trusted companion in education management! 🚀  
+For any support or suggestions, feel free to reach out to the development team.
