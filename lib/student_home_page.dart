@@ -74,18 +74,31 @@ class _StudentHomePageState extends State<StudentHomePage> {
       }
     });
 
-    // Real-time attendance updates
+    // Modified to read from all documents in the cycles collection with debug logging
     _attendanceSubscription = FirebaseFirestore.instance
         .collection('users')
         .doc(user.uid)
         .collection('cycles')
-        .limit(1)
         .snapshots()
         .listen((snapshot) {
+      print('Snapshot received: ${snapshot.docs.length} documents found');
       if (snapshot.docs.isNotEmpty) {
-        final data = snapshot.docs.first.data();
+        final allAttendance = <Map<String, dynamic>>[];
+        for (var doc in snapshot.docs) {
+          print('Document ID: ${doc.id}, Data: ${doc.data()}');
+          final data = doc.data();
+          if (data['attendance'] != null) {
+            allAttendance.addAll((data['attendance'] as List<dynamic>).cast<Map<String, dynamic>>());
+          }
+        }
+        print('Aggregated attendance: $allAttendance');
         setState(() {
-          attendance = (data['attendance'] as List<dynamic>?)?.cast<Map<String, dynamic>>() ?? [];
+          attendance = allAttendance;
+        });
+      } else {
+        print('No documents found in users/${user.uid}/cycles');
+        setState(() {
+          attendance = [];
         });
       }
     });

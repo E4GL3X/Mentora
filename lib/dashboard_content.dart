@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
+import 'attendance_utils.dart'; // Import the new utility file
 
 class DashboardContent extends StatefulWidget {
   const DashboardContent({super.key});
@@ -21,7 +22,8 @@ class _DashboardContentState extends State<DashboardContent> {
   String? selectedStudentId;
   bool isLoading = true;
   String? error;
-  bool paymentReminder = false; 
+  bool paymentReminder = false;
+  bool isSubmittingAttendance = false; // Track submission state for the button
 
   @override
   void initState() {
@@ -147,42 +149,37 @@ class _DashboardContentState extends State<DashboardContent> {
   Future<void> _submitAttendance() async {
     if (selectedDay == null || selectedStatus == null || selectedStudentId == null) return;
 
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
+    setState(() {
+      isSubmittingAttendance = true; // Disable the button during submission
+    });
 
     try {
       final attendanceEntry = {
         'date': Timestamp.fromDate(selectedDay!),
         'status': selectedStatus,
-        'studentId': selectedStudentId, 
+        'studentId': selectedStudentId,
       };
 
-      await FirebaseFirestore.instance
-          .collection('instructors')
-          .doc(user.uid)
-          .collection('cycles')
-          .doc('current_cycle_$selectedStudentId') 
-          .set({
-        'attendance': FieldValue.arrayUnion([attendanceEntry]),
-      }, SetOptions(merge: true));
-
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(selectedStudentId)
-          .collection('cycles')
-          .doc(user.uid)
-          .update({
-        'attendance': FieldValue.arrayUnion([attendanceEntry]),
-      });
+      // Use the utility method
+      await AttendanceUtils.updateAttendanceInBothCollections(selectedStudentId!, attendanceEntry);
 
       if (mounted) {
         setState(() {
           selectedStatus = null;
           selectedDay = null;
+          isSubmittingAttendance = false; // Re-enable the button after success
         });
       }
     } catch (e) {
-      throw Exception('Error submitting attendance: $e');
+      print('Error submitting attendance: $e');
+      if (mounted) {
+        setState(() {
+          isSubmittingAttendance = false; // Re-enable the button on error
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error submitting attendance: $e')),
+        );
+      }
     }
   }
 
@@ -344,7 +341,7 @@ class _DashboardContentState extends State<DashboardContent> {
                     nextClassDate = null;
                     selectedDay = null;
                     selectedStatus = null;
-                    paymentReminder = false; 
+                    paymentReminder = false;
                     _loadCycleData();
                     _loadPaymentReminder();
                   });
@@ -352,7 +349,6 @@ class _DashboardContentState extends State<DashboardContent> {
               ),
             ),
             const SizedBox(height: 20),
-  
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -536,10 +532,10 @@ class _DashboardContentState extends State<DashboardContent> {
                       width: double.infinity,
                       height: 50,
                       child: ElevatedButton(
-                        onPressed: (selectedDay != null && selectedStatus != null && selectedStudentId != null)
-                            ? () {
+                        onPressed: (selectedDay != null && selectedStatus != null && selectedStudentId != null && !isSubmittingAttendance)
+                            ? () async {
                                 print('Attendance submitted');
-                                _submitAttendance();
+                                await _submitAttendance();
                               }
                             : null,
                         style: ElevatedButton.styleFrom(
@@ -548,7 +544,9 @@ class _DashboardContentState extends State<DashboardContent> {
                             borderRadius: BorderRadius.circular(15),
                           ),
                         ),
-                        child: const Text('Submit', style: TextStyle(color: Colors.white)),
+                        child: isSubmittingAttendance
+                            ? const CircularProgressIndicator(color: Colors.white)
+                            : const Text('Submit', style: TextStyle(color: Colors.white)),
                       ),
                     ),
                   ],
