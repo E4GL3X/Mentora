@@ -20,7 +20,6 @@ class _SignupPageState extends State<SignupPage> {
   bool _isLoading = false;
   String? _errorMessage;
 
-  // Generate a unique six-digit student number in the format STU-123456
   Future<String> _generateUniqueStudentNumber() async {
     const prefix = 'STU-';
     const digitsLength = 6;
@@ -28,18 +27,16 @@ class _SignupPageState extends State<SignupPage> {
     String studentNumber;
 
     while (true) {
-      // Generate a random six-digit number
-      final number = random.nextInt(999999 - 100000) + 100000; // Ensures 6 digits
+      final number = random.nextInt(999999 - 100000) + 100000; 
       studentNumber = '$prefix$number';
 
-      // Check if this student number already exists in Firestore
+  
       final query = await FirebaseFirestore.instance
           .collection('users')
           .where('studentNumber', isEqualTo: studentNumber)
           .get();
 
       if (query.docs.isEmpty) {
-        // No duplicate found, this student number is unique
         break;
       }
     }
@@ -59,16 +56,13 @@ class _SignupPageState extends State<SignupPage> {
         password: _passwordController.text.trim(),
       );
 
-      // Generate unique student number if role is student
       String? studentNumber;
       if (_selectedRole == 'student') {
         studentNumber = await _generateUniqueStudentNumber();
       }
 
-      // Send email verification
       await userCredential.user!.sendEmailVerification();
 
-      // Save user data to Firestore
       await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set({
         'email': _emailController.text.trim(),
         'name': _nameController.text.trim(),
@@ -76,7 +70,6 @@ class _SignupPageState extends State<SignupPage> {
         if (studentNumber != null) 'studentNumber': studentNumber,
       });
 
-      // Show confirmation dialog
       showDialog(
         context: context,
         barrierDismissible: false,

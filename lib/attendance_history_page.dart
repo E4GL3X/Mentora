@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // For formatting dates (e.g., month name)
+import 'package:intl/intl.dart'; 
 
 class AttendanceHistoryPage extends StatefulWidget {
   const AttendanceHistoryPage({super.key});
@@ -29,29 +29,24 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
         .collection('cycles')
         .get();
 
-    // Process each cycle document
     final cycles = await Future.wait(historySnapshot.docs.map((doc) async {
       final cycleData = doc.data();
       final attendanceList = (cycleData['attendance'] as List<dynamic>?) ?? [];
 
-      // Group attendance by studentId and month
       final Map<String, Map<String, List<Map<String, dynamic>>>> groupedByStudentAndMonth = {};
       for (var entry in attendanceList) {
         final studentId = entry['studentId'] as String?;
         final date = (entry['date'] as Timestamp?)?.toDate();
         if (studentId == null || date == null) continue;
 
-        // Fetch student name
         final studentDoc = await FirebaseFirestore.instance
             .collection('users')
             .doc(studentId)
             .get();
         final studentName = studentDoc.data()?['name'] ?? 'Unknown';
 
-        // Extract month name from the date
-        final monthName = DateFormat('MMMM').format(date); // e.g., "January"
+        final monthName = DateFormat('MMMM').format(date);
 
-        // Group by studentId and then by month
         if (!groupedByStudentAndMonth.containsKey(studentId)) {
           groupedByStudentAndMonth[studentId] = {};
         }
@@ -64,7 +59,6 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
         });
       }
 
-      // Flatten the grouped data into a list for display
       final List<Map<String, dynamic>> cycleEntries = [];
       groupedByStudentAndMonth.forEach((studentId, months) {
         months.forEach((month, entries) {
@@ -117,7 +111,6 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
                             ? attendanceEntries.first['name']
                             : 'Unknown';
 
-                        // Calculate status counts
                         final presentCount = attendanceEntries
                             .where((entry) => entry['status'] == 'Present')
                             .length;

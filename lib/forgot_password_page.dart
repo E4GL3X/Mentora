@@ -95,7 +95,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Title
                 const Row(
                   children: [
                     Text(
@@ -110,7 +109,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 ),
                 const SizedBox(height: 50),
 
-                // SVG Image
                 Center(
                   child: SvgPicture.asset(
                     'assets/images/reset.svg',
@@ -124,7 +122,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 ),
                 const SizedBox(height: 100),
 
-                // Email TextField
                 TextField(
                   controller: emailController,
                   decoration: InputDecoration(
@@ -143,7 +140,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 ),
                 const SizedBox(height: 50),
 
-                // Reset Password Button
                 Center(
                   child: SizedBox(
                     width: 200,
@@ -167,7 +163,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 ),
                 const SizedBox(height: 20),
 
-                // Back to Log In Button
                 Center(
                   child: SizedBox(
                     width: 200,

@@ -5,8 +5,8 @@ import 'package:mentora/signup_page.dart';
 import 'package:mentora/instructor_home.dart';
 import 'package:mentora/forgot_password_page.dart';
 import 'package:mentora/student_home_page.dart';
-import 'package:flutter/services.dart'; // For SystemChrome
-import 'package:flutter_spinkit/flutter_spinkit.dart'; // For custom loading
+import 'package:flutter/services.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -24,11 +24,10 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
-    // Set the status bar to transparent
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent, // Transparent status bar
-        statusBarIconBrightness: Brightness.light, // Light icons for visibility
+        statusBarColor: Colors.transparent, 
+        statusBarIconBrightness: Brightness.light, 
       ),
     );
   }
@@ -39,7 +38,6 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      // Sign in with email and password
       final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
@@ -47,47 +45,40 @@ class _LoginPageState extends State<LoginPage> {
 
       final user = credential.user;
 
-      // Check if user exists and email is verified
       if (user != null && user.emailVerified) {
-        // Fetch role from Firestore with explicit type
         final DocumentSnapshot<Map<String, dynamic>> userDoc =
             await FirebaseFirestore.instance
                 .collection('users')
                 .doc(user.uid)
                 .get();
 
-        // Explicitly check if document exists
         final bool docExists = userDoc.exists;
 
-        // Safely fetch role with type casting and debug
         final String role =
             docExists
                 ? (userDoc.data()?['role'] as String? ?? 'Student')
                 : 'Student';
-        print('Retrieved role: $role'); // Debug print
+        print('Retrieved role: $role'); 
 
-        // Navigate based on role, clearing the navigation stack
         if (role.toLowerCase() == 'instructor') {
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (_) => const InstructorHome()),
-            (route) => false, // Removes all previous routes
+            (route) => false, 
           );
         } else {
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (_) => const StudentHomePage()),
-            (route) => false, // Removes all previous routes
+            (route) => false, 
           );
         }
       } else {
-        // Show email verification error
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Please verify your email.')),
         );
       }
     } catch (e) {
-      // Show login error
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Check credentials or sign up first.')),
       );
@@ -107,7 +98,6 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Get the screen height
     final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
@@ -116,16 +106,14 @@ class _LoginPageState extends State<LoginPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // PNG Image at the top, taking 1/3 of the screen height
             SizedBox(
               width: double.infinity,
-              height: screenHeight / 3, // 1/3 of the screen height
+              height: screenHeight / 3, 
               child: Image.asset(
                 'assets/images/logo.png',
-                fit: BoxFit.cover, // Fills the space, may crop if needed
+                fit: BoxFit.cover, 
               ),
             ),
-            // Padding for the remaining content
             Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: 24.0,
@@ -134,7 +122,6 @@ class _LoginPageState extends State<LoginPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Email TextField
                   TextField(
                     controller: emailController,
                     decoration: InputDecoration(
@@ -153,7 +140,6 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 20),
 
-                  // Password TextField
                   TextField(
                     controller: passwordController,
                     obscureText: !_isPasswordVisible,
@@ -186,7 +172,6 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 70),
 
-                  // Login Button with custom loading
                   Center(
                     child: SizedBox(
                       width: 200,
@@ -220,7 +205,6 @@ class _LoginPageState extends State<LoginPage> {
 
                   const SizedBox(height: 20),
 
-                  // Sign Up and Forgot Password Links
                   Center(
                     child: Column(
                       children: [

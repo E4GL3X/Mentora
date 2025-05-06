@@ -21,7 +21,7 @@ class _DashboardContentState extends State<DashboardContent> {
   String? selectedStudentId;
   bool isLoading = true;
   String? error;
-  bool paymentReminder = false; // Track payment reminder status for the selected student
+  bool paymentReminder = false; 
 
   @override
   void initState() {
@@ -154,14 +154,14 @@ class _DashboardContentState extends State<DashboardContent> {
       final attendanceEntry = {
         'date': Timestamp.fromDate(selectedDay!),
         'status': selectedStatus,
-        'studentId': selectedStudentId, // Include studentId in the attendance entry
+        'studentId': selectedStudentId, 
       };
 
       await FirebaseFirestore.instance
           .collection('instructors')
           .doc(user.uid)
           .collection('cycles')
-          .doc('current_cycle_$selectedStudentId') // Use a unique doc ID for the cycle
+          .doc('current_cycle_$selectedStudentId') 
           .set({
         'attendance': FieldValue.arrayUnion([attendanceEntry]),
       }, SetOptions(merge: true));
@@ -344,7 +344,7 @@ class _DashboardContentState extends State<DashboardContent> {
                     nextClassDate = null;
                     selectedDay = null;
                     selectedStatus = null;
-                    paymentReminder = false; // Reset payment reminder
+                    paymentReminder = false; 
                     _loadCycleData();
                     _loadPaymentReminder();
                   });
@@ -352,7 +352,7 @@ class _DashboardContentState extends State<DashboardContent> {
               ),
             ),
             const SizedBox(height: 20),
-            // Payment Reminder Button
+  
             SizedBox(
               width: double.infinity,
               height: 50,

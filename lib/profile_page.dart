@@ -201,19 +201,16 @@ class _ProfilePageState extends State<ProfilePage>
     if (user == null) return;
 
     try {
-      // Add to relationships collection
       await FirebaseFirestore.instance.collection('relationships').add({
         'instructorId': instructorId,
         'studentId': user.uid,
       });
 
-      // Delete request
       await FirebaseFirestore.instance
           .collection('requests')
           .doc(requestId)
           .delete();
 
-      // Refresh requests
       await _loadPendingRequests();
     } catch (e) {
       print('Error accepting request: $e');
@@ -530,7 +527,7 @@ class _ProfilePageState extends State<ProfilePage>
                           decoration: const InputDecoration(
                             labelText: 'Student Number',
                           ),
-                          enabled: false, // Make it read-only
+                          enabled: false, 
                         ),
                       ],
                       const SizedBox(height: 16),

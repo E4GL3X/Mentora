@@ -279,7 +279,7 @@ class _StudentHomePageState extends State<StudentHomePage> {
             ),
             const SizedBox(height: 20),
             Text(
-              'Next Class on ${nextClassDate != null ? '${nextClassDate!.day}${['th', 'st', 'nd', 'rd', 'th'][nextClassDate!.day % 10 > 3 ? 4 : nextClassDate!.day % 10]} ${nextClassDate!.toString().substring(0, 10)}' : 'Not set'}',
+              'Next Class ${nextClassDate != null ? '${nextClassDate!.day}${['th', 'st', 'nd', 'rd', 'th'][nextClassDate!.day % 10 > 3 ? 4 : nextClassDate!.day % 10]} ${nextClassDate!.toString().substring(0, 10)}' : 'not announced yet'}',
               style: const TextStyle(fontSize: 16, color: Color(0xFF2E5077)),
             ),
             const SizedBox(height: 20),
@@ -403,7 +403,6 @@ class _StudentHomePageState extends State<StudentHomePage> {
   }
 
   Widget _buildAttendance() {
-    // Group attendance by month
     Map<int, List<Map<String, dynamic>>> groupedAttendance = {};
     for (var entry in attendance) {
       final date = (entry['date'] as Timestamp).toDate();
@@ -414,7 +413,6 @@ class _StudentHomePageState extends State<StudentHomePage> {
       groupedAttendance[month]!.add(entry);
     }
 
-    // Sort months
     var sortedMonths = groupedAttendance.keys.toList()..sort();
 
     return SingleChildScrollView(
@@ -428,7 +426,7 @@ class _StudentHomePageState extends State<StudentHomePage> {
               style: TextStyle(
                 fontSize: 30,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF2E5077), // Dark Blue
+                color: Color(0xFF2E5077),
               ),
             ),
             const SizedBox(height: 20),
@@ -494,7 +492,7 @@ class _StudentHomePageState extends State<StudentHomePage> {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  const Divider(color: Color(0xFF4DA1A9), thickness: 1), // Teal divider
+                  const Divider(color: Color(0xFF4DA1A9), thickness: 1),
                   const SizedBox(height: 10),
                 ],
               );

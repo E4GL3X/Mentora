@@ -19,7 +19,6 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    // Set the status bar to transparent
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.light,
@@ -28,12 +27,10 @@ class _SplashScreenState extends State<SplashScreen> {
     Timer(const Duration(seconds: 3), () async {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        // Force refresh the token to ensure we get the latest claims
         await user.getIdToken(true);
         final userDoc = await FirebaseAuth.instance.currentUser?.getIdTokenResult();
         String? role = userDoc?.claims?['role'];
 
-        // Fallback: Fetch role from Firestore if custom claims are not set or incorrect
         if (role == null || role.isEmpty) {
           final userData = await FirebaseFirestore.instance
               .collection('users')
@@ -46,10 +43,9 @@ class _SplashScreenState extends State<SplashScreen> {
             role = 'student';
           }
         } else {
-          role = role.toLowerCase(); // Ensure consistent comparison
+          role = role.toLowerCase(); 
         }
 
-        // Navigate based on role
         if (role == 'instructor') {
           Navigator.pushReplacement(
             context,
@@ -75,14 +71,13 @@ class _SplashScreenState extends State<SplashScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // Background Image
           Positioned.fill(
             child: Image.asset(
               'assets/images/splash.png',
-              fit: BoxFit.cover, // Fills the entire screen
+              fit: BoxFit.cover, 
             ),
           ),
-          // Center "Mentora" Text
+          
           Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -92,10 +87,10 @@ class _SplashScreenState extends State<SplashScreen> {
                   style: TextStyle(
                     fontSize: 60,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFFDCD6F7),
+                    color: Color.fromARGB(255, 255, 255, 255),
                   ),
                 ),
-                const SizedBox(height: 400), // Space for loader at the bottom
+                const SizedBox(height: 400),
                 SpinKitFadingCircle(
                   color: const Color(0xFFDCD6F7),
                   size: 40.0,
