@@ -74,4 +74,4 @@ Instructors and students can create accounts securely using Gmail verification.
 ---
 
 Thank you for choosing **Mentora** — your trusted companion in education management! 🚀  
-For any support or suggestions, feel free to reach out to the development team.
+For any support or suggestions, feel free to knock and reach out to the development team.
